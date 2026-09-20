@@ -1,0 +1,863 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Banana Jungle Adventure</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            overflow: hidden;
+            background: #111;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+
+        #game {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background:
+                linear-gradient(#62d8ff 0%, #b8f1ff 58%, #69c95a 58%, #2f8f3b 100%);
+        }
+
+        /* Sol */
+        .sun {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #ffe66d;
+            right: 8%;
+            top: 8%;
+            box-shadow: 0 0 35px #fff09a;
+        }
+
+        /* Nubes */
+        .cloud {
+            position: absolute;
+            width: 130px;
+            height: 40px;
+            background: white;
+            border-radius: 40px;
+            opacity: .8;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: "";
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 55px;
+            height: 55px;
+            left: 20px;
+            top: -25px;
+        }
+
+        .cloud::after {
+            width: 70px;
+            height: 70px;
+            right: 15px;
+            top: -35px;
+        }
+
+        /* Mundo */
+        #world {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 10000px;
+            height: 100%;
+            transition: transform .04s linear;
+        }
+
+        /* Suelo */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            height: 105px;
+            background:
+                repeating-linear-gradient(45deg,
+                    #5cbd45 0,
+                    #5cbd45 18px,
+                    #4ca63b 18px,
+                    #4ca63b 36px);
+            border-top: 12px solid #7b4b25;
+        }
+
+        /* Plataformas */
+        .platform {
+            position: absolute;
+            height: 25px;
+            background: #8b542c;
+            border: 5px solid #5e341c;
+            border-radius: 8px;
+        }
+
+        /* Mono */
+        #player {
+            position: absolute;
+            width: 58px;
+            height: 65px;
+            z-index: 20;
+            font-size: 50px;
+            text-align: center;
+            line-height: 65px;
+            user-select: none;
+        }
+
+        /* Bananas */
+        .banana {
+            position: absolute;
+            font-size: 35px;
+            z-index: 10;
+            filter: drop-shadow(2px 3px 1px rgba(0, 0, 0, .3));
+        }
+
+        /* Trampas */
+        .spikes {
+            position: absolute;
+            font-size: 42px;
+            z-index: 8;
+        }
+
+        /* Enemigos */
+        .enemy {
+            position: absolute;
+            font-size: 43px;
+            z-index: 12;
+        }
+
+        /* Meta */
+        .flag {
+            position: absolute;
+            font-size: 65px;
+        }
+
+        /* Jefe */
+        #boss {
+            position: absolute;
+            width: 160px;
+            height: 130px;
+            font-size: 115px;
+            text-align: center;
+            z-index: 25;
+        }
+
+        .bossBar {
+            position: absolute;
+            width: 220px;
+            height: 18px;
+            background: #222;
+            border: 3px solid white;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 30;
+        }
+
+        #bossHealth {
+            height: 100%;
+            width: 100%;
+            background: #e63946;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 100;
+            color: white;
+            font-size: 19px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, .45);
+            padding: 10px 15px;
+            border-radius: 15px;
+        }
+
+        /* Controles Android */
+        #controls {
+            position: fixed;
+            bottom: 18px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        .controlGroup {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .btn {
+            width: 75px;
+            height: 75px;
+            border: 3px solid rgba(255, 255, 255, .7);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, .45);
+            color: white;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        .btn:active {
+            background: rgba(255, 255, 255, .35);
+            transform: scale(.92);
+        }
+
+        .jump {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 170, 0, .7);
+        }
+
+        /* Pantallas */
+        .screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 20, .92);
+            z-index: 500;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .screen h1 {
+            font-size: clamp(35px, 8vw, 70px);
+            color: #ffe066;
+            text-shadow: 4px 4px #7b3f00;
+            margin-bottom: 15px;
+        }
+
+        .screen p {
+            max-width: 600px;
+            font-size: 19px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .startBtn {
+            padding: 18px 40px;
+            border: none;
+            border-radius: 18px;
+            background: #ffb703;
+            color: #4a2600;
+            font-size: 23px;
+            font-weight: bold;
+            box-shadow: 0 6px #9c6500;
+        }
+
+        .startBtn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px #9c6500;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Oscuridad para jefe */
+        #bossArea {
+            position: absolute;
+            left: 8200px;
+            bottom: 105px;
+            width: 1500px;
+            height: calc(100% - 105px);
+            background: linear-gradient(#1b2430, #10151b);
+            z-index: 1;
+        }
+
+        #bossArea h2 {
+            position: absolute;
+            top: 80px;
+            left: 500px;
+            color: #ffcc00;
+            font-size: 38px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game">
+
+        <div class="sun"></div>
+        <div class="cloud" style="left:12%;top:15%;"></div>
+        <div class="cloud" style="left:48%;top:22%;transform:scale(.7);"></div>
+        <div class="cloud" style="left:75%;top:12%;transform:scale(.8);"></div>
+
+        <div id="world">
+
+            <div id="player">🐒</div>
+
+            <!-- Suelo -->
+            <div class="ground" style="left:0;width:10000px;"></div>
+
+            <!-- Plataformas -->
+            <div class="platform" style="left:450px;bottom:230px;width:180px;"></div>
+            <div class="platform" style="left:850px;bottom:300px;width:170px;"></div>
+            <div class="platform" style="left:1250px;bottom:220px;width:200px;"></div>
+            <div class="platform" style="left:1700px;bottom:320px;width:180px;"></div>
+            <div class="platform" style="left:2150px;bottom:250px;width:220px;"></div>
+            <div class="platform" style="left:2650px;bottom:350px;width:180px;"></div>
+            <div class="platform" style="left:3200px;bottom:250px;width:190px;"></div>
+            <div class="platform" style="left:3700px;bottom:320px;width:190px;"></div>
+            <div class="platform" style="left:4250px;bottom:230px;width:230px;"></div>
+            <div class="platform" style="left:4800px;bottom:350px;width:180px;"></div>
+            <div class="platform" style="left:5350px;bottom:250px;width:200px;"></div>
+            <div class="platform" style="left:5900px;bottom:330px;width:200px;"></div>
+            <div class="platform" style="left:6500px;bottom:250px;width:220px;"></div>
+            <div class="platform" style="left:7100px;bottom:350px;width:200px;"></div>
+            <div class="platform" style="left:7650px;bottom:250px;width:220px;"></div>
+
+            <!-- Bananas -->
+            <div class="banana" style="left:250px;bottom:180px;">🍌</div>
+            <div class="banana" style="left:500px;bottom:285px;">🍌</div>
+            <div class="banana" style="left:560px;bottom:285px;">🍌</div>
+            <div class="banana" style="left:900px;bottom:355px;">🍌</div>
+            <div class="banana" style="left:1300px;bottom:275px;">🍌</div>
+            <div class="banana" style="left:1360px;bottom:275px;">🍌</div>
+            <div class="banana" style="left:1740px;bottom:375px;">🍌</div>
+            <div class="banana" style="left:2200px;bottom:305px;">🍌</div>
+            <div class="banana" style="left:2700px;bottom:405px;">🍌</div>
+            <div class="banana" style="left:3250px;bottom:305px;">🍌</div>
+            <div class="banana" style="left:3750px;bottom:375px;">🍌</div>
+            <div class="banana" style="left:4300px;bottom:285px;">🍌</div>
+            <div class="banana" style="left:4850px;bottom:405px;">🍌</div>
+            <div class="banana" style="left:5400px;bottom:305px;">🍌</div>
+            <div class="banana" style="left:5950px;bottom:385px;">🍌</div>
+            <div class="banana" style="left:6550px;bottom:305px;">🍌</div>
+            <div class="banana" style="left:7150px;bottom:405px;">🍌</div>
+            <div class="banana" style="left:7700px;bottom:305px;">🍌</div>
+
+            <!-- Trampas -->
+            <div class="spikes" style="left:700px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:1100px;bottom:105px;">🔺🔺</div>
+            <div class="spikes" style="left:1500px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:1950px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:2450px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:2900px;bottom:105px;">🔺🔺</div>
+            <div class="spikes" style="left:3450px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:4000px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:4550px;bottom:105px;">🔺🔺</div>
+            <div class="spikes" style="left:5100px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:5650px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:6250px;bottom:105px;">🔺🔺</div>
+            <div class="spikes" style="left:6850px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:7450px;bottom:105px;">🔺🔺🔺</div>
+            <div class="spikes" style="left:8000px;bottom:105px;">🔺🔺</div>
+
+            <!-- Enemigos -->
+            <div class="enemy" style="left:1050px;bottom:105px;">🦔</div>
+            <div class="enemy" style="left:1850px;bottom:105px;">🐗</div>
+            <div class="enemy" style="left:3100px;bottom:105px;">🦔</div>
+            <div class="enemy" style="left:4400px;bottom:105px;">🐗</div>
+            <div class="enemy" style="left:5750px;bottom:105px;">🦔</div>
+            <div class="enemy" style="left:7000px;bottom:105px;">🐗</div>
+
+            <!-- Zona del jefe -->
+            <div id="bossArea">
+                <h2>🐊 ¡LA GUARIDA DEL COCODRILO! 🐊</h2>
+            </div>
+
+            <div id="boss" style="left:9000px;bottom:105px;">🐊</div>
+
+            <div class="bossBar" style="left:8970px;bottom:250px;">
+                <div id="bossHealth"></div>
+            </div>
+
+            <div class="flag" style="left:8100px;bottom:105px;">🚩</div>
+
+        </div>
+
+        <!-- HUD -->
+        <div id="hud">
+            🍌 Bananas: <span id="score">0</span>
+            &nbsp;&nbsp;
+            ❤️ Vidas: <span id="lives">3</span>
+        </div>
+
+        <!-- Controles -->
+        <div id="controls">
+            <div class="controlGroup">
+                <div class="btn" id="left">◀</div>
+                <div class="btn" id="right">▶</div>
+            </div>
+
+            <div class="controlGroup">
+                <div class="btn jump" id="jump">⬆</div>
+            </div>
+        </div>
+
+        <!-- Inicio -->
+        <div class="screen" id="startScreen">
+            <h1>🍌 Banana Jungle</h1>
+            <p>
+                Ayuda al pequeño mono a cruzar la jungla,
+                recoger bananas, esquivar trampas y derrotar
+                al enorme cocodrilo.
+            </p>
+            <button class="startBtn" id="startBtn">JUGAR</button>
+            <p style="font-size:14px;margin-top:20px;">
+                PC: ← → para moverte · ESPACIO para saltar<br>
+                Android: usa los botones de la pantalla
+            </p>
+        </div>
+
+        <!-- Game Over -->
+        <div class="screen hidden" id="gameOver">
+            <h1>😵 ¡Oh no!</h1>
+            <p>El mono se quedó sin vidas.</p>
+            <button class="startBtn" onclick="location.reload()">REINTENTAR</button>
+        </div>
+
+        <!-- Victoria -->
+        <div class="screen hidden" id="winScreen">
+            <h1>🏆 ¡GANASTE!</h1>
+            <p>
+                ¡El pequeño mono derrotó al cocodrilo
+                y conquistó la jungla!
+            </p>
+            <p>🍌 Bananas: <span id="finalScore">0</span></p>
+            <button class="startBtn" onclick="location.reload()">JUGAR OTRA VEZ</button>
+        </div>
+
+    </div>
+
+    <script>
+        const player = document.getElementById("player");
+        const world = document.getElementById("world");
+        const scoreText = document.getElementById("score");
+        const livesText = document.getElementById("lives");
+        const boss = document.getElementById("boss");
+        const bossHealth = document.getElementById("bossHealth");
+
+        let x = 100;
+        let y = 105;
+        let vx = 0;
+        let vy = 0;
+
+        let speed = 5;
+        let jumpPower = 15;
+        let gravity = 0.7;
+
+        let leftPressed = false;
+        let rightPressed = false;
+        let jumping = false;
+
+        let score = 0;
+        let lives = 3;
+        let bossHP = 100;
+
+        let started = false;
+        let invincible = false;
+
+        const keys = {};
+
+        const physicsObjects = [];
+
+        document.querySelectorAll(".banana, .enemy").forEach((element, index) => {
+            physicsObjects.push({
+                element,
+                x: parseFloat(element.style.left) || 0,
+                y: parseFloat(element.style.bottom) || 105,
+                vy: 0,
+                vx: element.classList.contains("enemy")
+                    ? (index % 2 === 0 ? 1.2 : -1.2)
+                    : 0,
+                homeX: parseFloat(element.style.left) || 0,
+                phase: index * .8
+            });
+        });
+
+        document.getElementById("startBtn").onclick = () => {
+            document.getElementById("startScreen").classList.add("hidden");
+            started = true;
+        };
+
+        document.addEventListener("keydown", e => {
+            keys[e.key] = true;
+
+            if (
+                e.key === "ArrowUp" ||
+                e.key === " " ||
+                e.key === "w"
+            ) {
+                jumping = true;
+            }
+        });
+
+        document.addEventListener("keyup", e => {
+            keys[e.key] = false;
+
+            if (
+                e.key === "ArrowUp" ||
+                e.key === " " ||
+                e.key === "w"
+            ) {
+                jumping = false;
+            }
+        });
+
+        /* Controles táctiles */
+
+        function buttonHold(id, onDown, onUp) {
+            const button = document.getElementById(id);
+
+            button.addEventListener("touchstart", e => {
+                e.preventDefault();
+                onDown();
+            }, { passive: false });
+
+            button.addEventListener("touchend", e => {
+                e.preventDefault();
+                onUp();
+            }, { passive: false });
+
+            button.addEventListener("mousedown", onDown);
+            button.addEventListener("mouseup", onUp);
+            button.addEventListener("mouseleave", onUp);
+        }
+
+        buttonHold(
+            "left",
+            () => leftPressed = true,
+            () => leftPressed = false
+        );
+
+        buttonHold(
+            "right",
+            () => rightPressed = true,
+            () => rightPressed = false
+        );
+
+        const jumpButton = document.getElementById("jump");
+
+        jumpButton.addEventListener("touchstart", e => {
+            e.preventDefault();
+            jumping = true;
+        }, { passive: false });
+
+        jumpButton.addEventListener("touchend", e => {
+            e.preventDefault();
+            jumping = false;
+        }, { passive: false });
+
+        jumpButton.addEventListener("mousedown", () => jumping = true);
+        jumpButton.addEventListener("mouseup", () => jumping = false);
+
+
+        /* Colisiones */
+
+        function rect(el) {
+            return el.getBoundingClientRect();
+        }
+
+        function collision(a, b) {
+            const A = rect(a);
+            const B = rect(b);
+
+            return (
+                A.left < B.right &&
+                A.right > B.left &&
+                A.top < B.bottom &&
+                A.bottom > B.top
+            );
+        }
+
+        function updateObjectPhysics() {
+            const platforms = document.querySelectorAll(".platform");
+
+            physicsObjects.forEach(object => {
+                if (object.element.classList.contains("collected")) return;
+
+                const isEnemy = object.element.classList.contains("enemy");
+                const previousY = object.y;
+
+                object.vy -= gravity;
+                object.y += object.vy;
+
+                if (isEnemy) {
+                    object.x += object.vx;
+
+                    if (Math.abs(object.x - object.homeX) > 90) {
+                        object.vx *= -1;
+                    }
+                } else {
+                    object.phase += .08;
+                }
+
+                let supportY = 105;
+
+                platforms.forEach(platform => {
+                    const platformX = parseFloat(platform.style.left) || 0;
+                    const platformY = parseFloat(platform.style.bottom) || 0;
+                    const platformWidth = platform.offsetWidth;
+                    const objectWidth = object.element.offsetWidth;
+                    const overlaps = object.x + objectWidth > platformX &&
+                        object.x < platformX + platformWidth;
+
+                    if (
+                        overlaps &&
+                        object.vy <= 0 &&
+                        previousY >= platformY + platform.offsetHeight - 5 &&
+                        object.y <= platformY + platform.offsetHeight
+                    ) {
+                        supportY = Math.max(supportY, platformY + platform.offsetHeight);
+                    }
+                });
+
+                if (object.y <= supportY) {
+                    object.y = supportY;
+                    object.vy = 0;
+                }
+
+                object.element.style.left = object.x + "px";
+                object.element.style.bottom = object.y + "px";
+
+                if (!isEnemy) {
+                    object.element.style.transform =
+                        "translateY(" + Math.sin(object.phase) * 5 + "px) rotate(" + Math.sin(object.phase) * 8 + "deg)";
+                }
+            });
+        }
+
+
+        /* Bananas */
+
+        function collectBananas() {
+
+            document.querySelectorAll(".banana").forEach(banana => {
+
+                if (
+                    !banana.classList.contains("collected") &&
+                    collision(player, banana)
+                ) {
+
+                    banana.classList.add("collected");
+                    banana.style.display = "none";
+
+                    score++;
+                    scoreText.textContent = score;
+                }
+            });
+        }
+
+
+        /* Trampas */
+
+        function checkTraps() {
+
+            document.querySelectorAll(".spikes").forEach(spike => {
+
+                if (collision(player, spike)) {
+                    damage();
+                }
+            });
+
+            document.querySelectorAll(".enemy").forEach(enemy => {
+
+                if (collision(player, enemy)) {
+                    damage();
+                }
+            });
+        }
+
+
+        /* Daño */
+
+        function damage() {
+
+            if (invincible) return;
+
+            lives--;
+            livesText.textContent = lives;
+
+            invincible = true;
+
+            x -= 100;
+            vy = 10;
+
+            player.style.opacity = ".4";
+
+            setTimeout(() => {
+                invincible = false;
+                player.style.opacity = "1";
+            }, 1200);
+
+            if (lives <= 0) {
+                document.getElementById("gameOver")
+                    .classList.remove("hidden");
+
+                started = false;
+            }
+        }
+
+
+        /* Jefe */
+
+        function fightBoss() {
+
+            const distance = Math.abs(x - 9000);
+
+            if (distance < 220) {
+
+                /* El jugador puede saltar encima del cocodrilo */
+
+                if (
+                    y > 200 &&
+                    vy < 0 &&
+                    x > 8900 &&
+                    x < 9160
+                ) {
+
+                    bossHP -= 2;
+                    bossHealth.style.width = bossHP + "%";
+
+                    vy = 12;
+
+                    if (bossHP <= 0) {
+                        win();
+                    }
+                }
+
+                /* Ataque del cocodrilo */
+
+                if (
+                    Math.abs(x - 9000) < 150 &&
+                    y < 210
+                ) {
+                    damage();
+                }
+            }
+        }
+
+
+        /* Victoria */
+
+        function win() {
+
+            started = false;
+
+            document.getElementById("finalScore").textContent = score;
+
+            document.getElementById("winScreen")
+                .classList.remove("hidden");
+        }
+
+
+        /* Física */
+
+        function update() {
+
+            if (!started) {
+                requestAnimationFrame(update);
+                return;
+            }
+
+            const goLeft =
+                keys["ArrowLeft"] ||
+                keys["a"] ||
+                leftPressed;
+
+            const goRight =
+                keys["ArrowRight"] ||
+                keys["d"] ||
+                rightPressed;
+
+            if (goLeft) {
+                vx = -speed;
+            } else if (goRight) {
+                vx = speed;
+            } else {
+                vx *= .75;
+            }
+
+            x += vx;
+
+            if (x < 0) x = 0;
+            if (x > 9600) x = 9600;
+
+            /* Saltar */
+
+            const onGround = y <= 105;
+
+            if (jumping && onGround) {
+                vy = jumpPower;
+            }
+
+            vy -= gravity;
+            y += vy;
+
+            if (y < 105) {
+                y = 105;
+                vy = 0;
+            }
+
+            /* Dibujar jugador */
+
+            player.style.left = x + "px";
+            player.style.bottom = y + "px";
+
+            /* Cámara */
+
+            let camera = x - window.innerWidth * .35;
+
+            if (camera < 0) camera = 0;
+
+            const maxCamera =
+                10000 - window.innerWidth;
+
+            if (camera > maxCamera)
+                camera = maxCamera;
+
+            world.style.transform =
+                "translateX(" + (-camera) + "px)";
+
+            updateObjectPhysics();
+            collectBananas();
+            checkTraps();
+            fightBoss();
+
+            /* Caída */
+            if (y < 0) {
+                damage();
+                y = 105;
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        update();
+    </script>
+
+</body>
+
+</html>
+```
